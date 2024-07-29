@@ -13,10 +13,8 @@ Please cite as following:
 - [Abstract](#abstract)
 - [Getting Started](#getting_started)
 - [Installing](#installing)
-- [Code Structure](#code_structure)
-- [Analysis and Reproducible Figures and Statistics](#analysis_and_reproducible_figures_and_statistics) 
-    - [.....]
-- [Contributing](#contributing)
+- [Abbreviations](#abbreviations):
+- [Data_Shared](#data_shared)
 
 
 ## Abstract: 
@@ -72,7 +70,7 @@ librarian::shelf(ggplot2, readxl, cowplot, ggforce, ggside,
 plyr, MASS, dplyr, tidybayes, table1, broom, modelr, distributional, ggpubr, 
 lme4, lmerTest, performance, see, patchwork, effects,emmeans, pbkrtest, sjPlot, httpgd, languageserver,
 magrittr, dabestr, ggpmisc, ggridges, ggbeeswarm, zeallot, viridis,showtext, RColorBrewer, 
-lmeresampler, gridExtra,readr, grDevices)
+lmeresampler, gridExtra,readr, grDevices, gtsummary)
 `
 
 ## Code_Structure 
@@ -87,7 +85,8 @@ lmeresampler, gridExtra,readr, grDevices)
 * Note: to ethically share clinical data and preserve anonymity we avoided to share data with multiple identifiers (e.g., the combination of age and sex) [Hrynaszkiewicz et al. 2010] (https://doi.org/10.1136/bmj.c181) and used [synthpop](https://www.synthpop.org.uk/get-started.html) to 
 generate synthetic data for age and sex and removed all uniquely identifying data from the shared dataset (e.g., specific diagnoses with comorbities) 
 
-The following data is publically available: 
+### Data_Shared 
+* The following data is publically available: 
 
 ##### Data from the behavioral tasks:
 * `TUE008_data_TasteTest.xlsx` (all ratings from all phases)
