@@ -4,7 +4,8 @@ This project investigates
 (1) food reward ratings moving gradually from anticipation to consummation in depression and anhedonia, using a taste test paradigm. 
 (2) the role of metabolic hormones in depression, anhedonia, and food reward ratings
 
-This project code accompanies [this paper](add link to paper later)
+This project code accompanies [this paper] 
+[PrePrint]([https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository](https://www.medrxiv.org/content/10.1101/2024.03.26.24304849v1 ))
 
 Please cite as following: 
 
