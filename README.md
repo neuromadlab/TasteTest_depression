@@ -13,9 +13,9 @@ Please cite as following:
 - [Abstract](#abstract)
 - [Getting Started](#getting_started)
 - [Installing](#installing)
-- [Abbreviations](#abbreviations):
+- [Abbreviations](#abbreviations)
 - [Data_Shared](#data_shared)
-
+- [Code_Shared](#Code_Shared)
 
 ## Abstract: 
 
@@ -102,7 +102,7 @@ generate synthetic data for age and sex and removed all uniquely identifying dat
 * `BDI-II.xlsx` 
 
 
-#### Code Folder: 
+### Code_Shared: 
 
 * `TasteTest_main.R` Main Skript for primary analysis and figures reported in the paper. 
 
