@@ -104,14 +104,14 @@ generate synthetic data for age and sex and removed all uniquely identifying dat
 
 ### Code_Shared: 
 
-* ![TasteTest_main.R](/code/TasteTest_main.R) Main Skript for primary analysis and figures reported in the paper. 
+* ![TasteTest_main.r](/code/TasteTest_main.r) Main Skript for primary analysis and figures reported in the paper. 
 
 Supporting Scripts used to create the dataframes that were made available: 
-* ![TasteTest_main.R](/code/TasteTest_main.R) Script that preprocesses ghrelin value tables, log transforms, residualises etc. 
+* ![TasteTest_main.r](/code/TasteTest_main.r) Script that preprocesses ghrelin value tables, log transforms, residualises etc. 
 Creates file: TUE008_ghrelin_summary_preprocessed.csv
-* ![preprocessing_metabolism.R](/code/preprocessing_metabolism.R) Script that merges ghrelin values with questionnaire data and other blood data that is also preprocessed, Creates file: TUE008_ghrelin_quests_preprocessed.csv
+* ![preprocessing_metabolism.r](/code/preprocessing_metabolism.r) Script that merges ghrelin values with questionnaire data and other blood data that is also preprocessed, Creates file: TUE008_ghrelin_quests_preprocessed.csv
 Plots metabolic paramters and questionnaire scores (SHAPS, BDI,..) 
-* ![preprocessing_task.R](/input/preprocessing_task.R) Script that prepared dataframe from behavioral data 
+* ![preprocessing_task.r](/input/preprocessing_task.r) Script that prepared dataframe from behavioral data 
 
 
 
