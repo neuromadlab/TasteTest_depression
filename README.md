@@ -89,29 +89,29 @@ generate synthetic data for age and sex and removed all uniquely identifying dat
 * The following data is publically available: 
 
 ##### Data from the behavioral tasks:
-* `TUE008_data_TasteTest.xlsx` (all ratings from all phases)
-* `dliking_joint.xlsx` (liking ratings,merged with questionnares and covariates)
-* `dwanting_joint.xlsx`  (wanting ratings,merged with questionnares and covariates)
+* ![TUE008_data_TasteTest.xlsx](/input/TUE008_data_TasteTest.xlsx) (all ratings from all phases)
+* ![dliking_joint.xlsx](/input/dliking_joint.xlsx) (liking ratings,merged with questionnares and covariates)
+* ![dwanting_joint.xlsx](/input/dwanting_joint.xlsx) (wanting ratings,merged with questionnares and covariates)
 
 ##### Hormonal data:
-* `TUE008_Participant_data_sharable.xlsx` incl. covariates (age and sex synthetic) and preprocessed hormonal data 
+* ![TUE008_data_TasteTest.xlsx](/input/TUE008_data_TasteTest.xlsx) `TUE008_Participant_data_sharable.xlsx` incl. covariates (age and sex synthetic) and preprocessed hormonal data 
 
 ##### Questionnaire data:
-* `SHAPS_D.xlsx` 
-* `SighADS.xlsx` 
-* `BDI-II.xlsx` 
+* ![SHAPS_D.xlsx](/input/SHAPS_D.xlsx)
+* ![SighADS.xlsx](/input/SighADS.xlsx)
+* ![BDI-II.xlsx](/input/BDI-II.xlsx)
 
 
 ### Code_Shared: 
 
-* `TasteTest_main.R` Main Skript for primary analysis and figures reported in the paper. 
+* ![TasteTest_main.R](/code/TasteTest_main.R) Main Skript for primary analysis and figures reported in the paper. 
 
 Supporting Scripts used to create the dataframes that were made available: 
-* `preprocessing_ghrelin_blood.R` Script that preprocesses ghrelin value tables, log transforms, residualises etc. 
+* ![TasteTest_main.R](/code/TasteTest_main.R) Script that preprocesses ghrelin value tables, log transforms, residualises etc. 
 Creates file: TUE008_ghrelin_summary_preprocessed.csv
-* `preprocessing_metabolism.R` Script that merges ghrelin values with questionnaire data and other blood data that is also preprocessed, Creates file: TUE008_ghrelin_quests_preprocessed.csv
+* ![preprocessing_metabolism.R](/code/preprocessing_metabolism.R) Script that merges ghrelin values with questionnaire data and other blood data that is also preprocessed, Creates file: TUE008_ghrelin_quests_preprocessed.csv
 Plots metabolic paramters and questionnaire scores (SHAPS, BDI,..) 
-* `preprocessing_task.R` Script that prepared dataframe from behavioral data 
+* ![preprocessing_task.R](/input/preprocessing_task.R) Script that prepared dataframe from behavioral data 
 
 
 
