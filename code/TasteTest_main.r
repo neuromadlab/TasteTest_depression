@@ -22,7 +22,7 @@ librarian::shelf(ggplot2, readxl, cowplot, ggforce, ggside,
 plyr, MASS, dplyr, tidybayes, table1, broom, modelr, distributional, ggpubr, 
 lme4, lmerTest, performance, see, patchwork, effects,emmeans, pbkrtest, sjPlot, httpgd, languageserver,
 magrittr, dabestr, ggpmisc, ggridges, ggbeeswarm, zeallot, viridis,showtext, RColorBrewer, 
-lmeresampler, gridExtra,readr, grDevices, gtsummary)
+lmeresampler, gridExtra,readr, grDevices, gtsummary, car)
 
 
 # Set whether Original data should be used or synthetic data (openly shared dataset with age and sex synthetic)
@@ -1650,7 +1650,6 @@ p.adjust(p_AT, method = "BH", n = length(p_AT))
 p_SHAPS_AT = c(0.086, 0.53, 0.008, 0.55, 0.204 )
 p.adjust(p_SHAPS_AT, method = "BH", n = length(p_SHAPS_AT))
 
-
 # plot Triglyceride Index and SHAPS 
 p_SHAPS_TyG <- ggplot(data = d_quest, aes(x = res_TyG, y = SHAPS_sum) ) +
   geom_point(aes(size = BMI, color = factor(fMDD)), alpha =1)+
@@ -2212,48 +2211,20 @@ head(d_WL_MV_agg2)
 d_WL_MV_agg2$fMDD <- factor(d_WL_MV_agg2$Group_MDD.x, levels = c(0,1), labels = c("HCP", "MDD"))
 
 # Multivariate Model
-WL_MV_AG_v2 <- lm(cbind(RatingValue.x, RatingValue.y) ~ res_logF_AG.x  + fMDD  + cBMI.x + cAge.x + cSex.x, data = d_WL_MV_agg2)
-mlm2 <- update(WL_MV_AG_v2, . ~ . -cBMI.x - cAge.x - cSex.x  )
-anova(WL_MV_AG_v2, mlm2)
-# .> Dont throw out covariates, sign. different model 
-library(car)
+WL_MV_AG_v2 <- lm(cbind(RatingValue.x, RatingValue.y) ~ res_logF_AG.x  +   fMDD  + cBMI.x + cAge.x + cSex.x, data = d_WL_MV_agg2)
 # Test statistic for Multivariate regression, Pillai test 
 Anova(WL_MV_AG_v2)
 summary(WL_MV_AG_v2)
 
-
-dwanting_agg2_phase <- aggregate(dwanting_joint_ghr,
-                by = list(dwanting_joint_ghr$fID, dwanting_joint_ghr$fPhase_dicho_FCR_TT),
-                FUN = mean)
-
-dliking_agg2_phase <- aggregate(dliking_joint_ghr,
-                by = list(dliking_joint_ghr$fID, dliking_joint_ghr$fPhase_dicho_FCR_TT),
-                FUN = mean)
-
-# Merge Liking and Wanting Aggregate Dataframes 
-d_WL_MV_agg2_Phase <- merge(dwanting_agg2_phase, dliking_agg2_phase, by = c("ID", "Group.2"))
-d_WL_MV_agg2_PhaseAnt <- d_WL_MV_agg2_Phase %>%  filter(Group.2 == "1st_ant")
-d_WL_MV_agg2_PhaseTT <- d_WL_MV_agg2_Phase %>%  filter(Group.2 == "taste_test")
-
-d_WL_MV_agg2_PhaseAnt$cRatingLiking <- d_WL_MV_agg2_PhaseAnt$RatingValue.y - mean(d_WL_MV_agg2_PhaseAnt$RatingValue.y)
-d_WL_MV_agg2_PhaseTT$cRatingLiking <- d_WL_MV_agg2_PhaseTT$RatingValue.y - mean(d_WL_MV_agg2_PhaseTT$RatingValue.y)
+# Test Coupling of wanting and liking 
 d_WL_MV_agg2$cRatingLiking <- d_WL_MV_agg2$RatingValue.y - mean(d_WL_MV_agg2$RatingValue.y)
 d_WL_MV_agg2$cRatingWanting <- d_WL_MV_agg2$RatingValue.x - mean(d_WL_MV_agg2$RatingValue.x)
 
-# Test Coupling of wanting and liking 
-fit1=lm(RatingValue.x~cRatingLiking*res_logF_AG.x,data=d_WL_MV_agg2_PhaseAnt)
-fit2=lm(RatingValue.x~cRatingLiking*res_logF_AG.x,data=d_WL_MV_agg2_PhaseTT)
-fit3=lm(RatingValue.x~cRatingLiking*res_logF_AG.x,data=d_WL_MV_agg2)
-fit3_check=lm(RatingValue.x~cRatingLiking*res_logF_AG.x *fMDD  +cBMI.x + cSex.x + cAge.x   ,data=d_WL_MV_agg2)
-fit4_check=lm(RatingValue.x~cRatingLiking*res_logF_AG.x  +cBMI.x + cSex.x + cAge.x   ,data=d_WL_MV_agg2)
-
-summary(fit1)
-summary(fit2)
-summary(fit3)
-confint(fit3, method = "Wald")
-summary(fit3_check) 
-anova(fit4_check, fit3_check)
-
+fit =lm(RatingValue.x~cRatingLiking*res_logF_AG.x ,data=d_WL_MV_agg2)
+fit_check=lm(RatingValue.x~cRatingLiking*res_logF_AG.x +cBMI.x + fMDD + cSex.x + cAge.x   ,data=d_WL_MV_agg2)
+summary(fit_check)
+confint(fit_check, method = "Wald")
+p.adjust(c(0.006, 0.022, 0.08, 0.047, 0.047, 0.051), method = "BH", n = 6)
 
 # LINEAR MIXED EFFECTS MODELS 
 # HOMA And taste_test 
@@ -2262,24 +2233,11 @@ contrasts(dwanting_joint$fPhase_dicho_FCR_TT)  <- contr.treatment(levels(dwantin
 wanting_6b <- lmer(RatingValue ~  fMDD + fPhase_dicho_FCR_TT * res_logHOMA + fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_joint)
 summary(wanting_6b)
 
-wanting_6bc <- lmer(RatingValue ~  fPhase_dicho_FCR_TT * res_TyG + fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_joint)
-summary(wanting_6bc)
-
-contrasts(dwanting_joint$fPhase_dicho_FCR_TT)  <- contr.sum(levels(dwanting_joint$fPhase_dicho_FCR_TT))
-wanting_06b <- lmer(RatingValue ~  fMDD + fPhase_dicho_FCR_TT * res_logHOMA + fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_joint)
-summary(wanting_06b)
-
 # For liking
 contrasts(dliking_joint$fPhase_dicho_FCR_TT)  <- contr.treatment(levels(dliking_joint$fPhase_dicho_FCR_TT), base = 1)
 liking_6b <- lmer(RatingValue ~  fPhase_dicho_FCR_TT * res_logHOMA + fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dliking_joint)
 summary(liking_6b)
 
-liking_6bc <- lmer(RatingValue ~  fPhase_dicho_FCR_TT * res_TyG + fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dliking_joint)
-summary(liking_6bc)
-
-contrasts(dliking_joint$fPhase_dicho_FCR_TT)  <- contr.sum(levels(dliking_joint$fPhase_dicho_FCR_TT))
-liking_06b <- lmer(RatingValue ~  fPhase_dicho_FCR_TT * res_logHOMA + fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dliking_joint)
-summary(liking_06b)
 # For ghrelin remove NA values 
 dwanting_joint_ghr <- dwanting_joint[complete.cases(dwanting_joint[,c("res_logF_AG")]),]
 length(unique(dwanting_joint_ghr$fID))
@@ -2355,15 +2313,15 @@ sjPlot:: tab_model(liking_06b, wanting_06b,
 
 ## PLOT MULTIVARRIATE ###
 
-install.packages("devtools")
-devtools::install_github("cardiomoon/ggiraphExtra")
- require(ggiraph)
+# install.packages("devtools")
+# devtools::install_github("cardiomoon/ggiraphExtra")
+require(ggiraph)
 require(ggiraphExtra)
 require(plyr)
 
 library("RColorBrewer")
 coloursP = colorRampPalette(brewer.pal(8, "Greens"))(10)
-MV_plot_AcrossPhase <- ggPredict(fit3, colorn = 12, digits = 3, show.summary = TRUE, se = TRUE ) + 
+MV_plot_AcrossPhase <- ggPredict(fit, colorn = 12, digits = 3, show.summary = TRUE, se = TRUE ) + 
     xlab("Liking (centered)")+  ylab("Prediction wanting") + 
     theme(legend.position = "right", legend.justification = c("right"), text = element_text(face = 'bold',size = 12.0),
             axis.text = element_text(face = 'plain',size = 12.0),
@@ -2381,66 +2339,9 @@ Fig4_Revision2 <- cowplot::plot_grid(titleA, titleB,
                   ncol = 2, nrow = 1, rel_heights =  c(0.12))
 ggsave(paste(path_out, sub_metparam, "cheatTitle.png", sep=""), plot = Fig4_Revision2, width = 12, height = 2, dpi=300, bg = "white")
 
-# https://strengejacke.github.io/ggeffects/reference/plot.html#ref-examples
-dat <- ggeffects::ggpredict(fit3, terms = c("cRatingLiking","res_logF_AG.x[-2:2]"))
-plot(dat, colors = "us", rawdata = TRUE, use.theme = FALSE )  + 
-labs(x = "Liking (centered)", y = "Prediction wanting") + 
-theme(legend.position = "right", legend.justification = c("right"), text = element_text(face = 'bold',size = 12.0),
-            axis.text = element_text(face = 'plain',size = 12.0),
-            axis.title=element_text(size=12), axis.text.x = element_text(size = 12.0)) 
-            
-ggsave(paste(path_out, sub_metparam, "Model_Predict_Want_Ghrelin_Liiking_across_PhasesV2.png", sep=""), width = 8, height = 4, dpi=300, bg = "transparent")
-
-
-
-fit1=lm(RatingValue.x~ RatingValue.y*res_logF_AG.x,data=d_WL_MV_agg2_PhaseAnt)
-
-MV_plot_Ant <- ggPredict(fit1, colorn = 9, digits = 3, show.summary = TRUE, se = TRUE ) + xlab("Liking")+  ylab("Prediction wanting") + 
-theme(legend.position = "right", legend.justification = c("center"), text = element_text(face = 'bold',size = 12.0),
-        axis.text = element_text(face = 'plain',size = 12.0),
-        axis.title=element_text(size=12), axis.text.x = element_text(size = 12.0)) 
-
-ggsave(paste(path_out, sub_metparam, "Model_Predict_Want_Ghrelin_Liiking_Ant.png", sep=""), width = 5, height = 5, dpi=300, bg = "white")
-
-
-MV_plot_Cons <- ggPredict(fit2, colorn = 9, digits = 3, show.summary = TRUE, se = TRUE ) + xlab("Liking")+  ylab("Prediction wanting") + 
-theme(legend.position = "right", legend.justification = c("center"), text = element_text(face = 'bold',size = 12.0),
-        axis.text = element_text(face = 'plain',size = 12.0),
-        axis.title=element_text(size=12), axis.text.x = element_text(size = 12.0)) 
-
-ggsave(paste(path_out, sub_metparam, "Model_Predict_Want_Ghrelin_Liiking_Cons.png", sep=""), width = 5, height = 5, dpi=300, bg = "white")
-
 
 WL_MV_HOMA_v2 <- lm(cbind(RatingValue.x, RatingValue.y) ~ res_logHOMA.x + fMDD + cBMI.x + cAge.x + cSex.x, data = d_WL_MV_agg2)
 summary(WL_MV_HOMA_v2)
-
-WL_MV_TyG_v2 <- lm(cbind(RatingValue.x, RatingValue.y) ~ res_logHOMA.x + fMDD + cBMI.x + cAge.x + cSex.x, data = d_WL_MV_agg2)
-summary(WL_MV_TyG_v2)
-
-# Show that Coupling is present in HCP and MDD similar extend
-plot_WL_AG_MDD <- 
-  ggplot(aes(x = cRatingLiking  ,y = RatingValue.x),data = d_WL_MV_agg2) +
-  geom_point(aes(color = fMDD), size = 4) +
-  #stat_cor(label.y = 40, label.x = 10,  size = 5) + 
-  geom_smooth(aes(group = fMDD, color = fMDD), size = 1.5, method = 'rlm', alpha = 0.5) +
-  scale_color_manual(guide = guide_legend(title=("Acyl ghrelin")),values = c(color_HCP, color_MDD)) +
-  theme(legend.position = "bottom", legend.justification = c("center"), text = element_text(face = 'bold',size = 12.0),
-        axis.text = element_text(face = 'plain',size = 12.0),
-        axis.title=element_text(size=12), axis.text.x = element_text(size = 12.0)) +
-  xlab(label = 'Liking (centered)') +
-  ylab(label = 'Wanting')
-
-# MANOVA: test at the same time, then use AOV to see where difference occured 
-res.WL_MV_AG_v2 <- manova(cbind(RatingValue.x, RatingValue.y) ~ res_logF_AG.x + fMDD + cBMI.x + cAge.x + cSex.x, data = d_WL_MV_agg2)
-summary.aov(res.WL_MV_AG_v2)
-
-res.WL_MV_HOMA_v2 <- manova(cbind(RatingValue.x, RatingValue.y) ~ res_logHOMA.x + cBMI.x + cAge.x + cSex.x, data = d_WL_MV_agg2)
-summary.aov(res.WL_MV_HOMA_v2)
-
-
-
-
-
 
 ##########################################################################################
 # Visulaizing taste_test and Metabolic Parameter 
@@ -2467,34 +2368,6 @@ p2W <- p2W + scale_color_manual(values=mycolors) + scale_fill_viridis(option="ma
         scale_color_manual(guide = guide_legend(title="Phase"), values = mycolors) 
 
 ggsave(paste(path_out, sub_metparam, "Model_EMM_Ghrelin_Phases.png", sep=""), width = 5, height = 5, dpi=300, bg = "white")
-
-# Ghrelin centered phases PLOT 
-p2WL <- emmip(wanting_06c, ~res_logF_AG , at=mylist,CIs=TRUE, lmerTest.limit = 3395, pbkrtest.limit = 3395, 
-      mult.name = "variety",
-      cov.reduce = FALSE, 
-      nuisance = c("cSex", "cAge", "cBMI"),
-      xlab = "fasting acyl ghrelin (res log)", ylab = "Prediction wanting", 
-      plotit = TRUE ) 
-
-p2WL <- p2WL + scale_color_manual(values=mycolors) + scale_fill_viridis(option="magma") +
-  theme(legend.position = "none", legend.justification = c("center"), text = element_text(face = 'bold',size = 12.0),
-        axis.text = element_text(face = 'plain',size = 12.0),
-        axis.title=element_text(size=12), axis.text.x = element_text(size = 12.0)) + 
-        scale_color_manual(guide = guide_legend(title="Phase"), values = mycolors) 
-
-
-
-p2WL2 <- p2WL2 + scale_color_manual(values=mycolors) + scale_fill_viridis(option="magma") +
-  theme(legend.position = "none", legend.justification = c("center"), text = element_text(face = 'bold',size = 12.0),
-        axis.text = element_text(face = 'plain',size = 12.0),
-        axis.title=element_text(size=12), axis.text.x = element_text(size = 12.0)) + 
-        scale_color_manual(guide = guide_legend(title="Phase"), values = mycolors) 
-
-p2WL$group <- "p2WL"
-p2WL2$group <- "p2WL2"
-plot_emmipTOG<- rbind(p2WL, p2WL2)
-
-ggsave(paste(path_out, sub_metparam, "Model_EMM_Ghrelin_PhasesCentered.png", sep=""), width = 5, height = 5, dpi=300, bg = "white")
 
 (mylist <- list(res_logF_AG=seq(-2.5,2,by=0.5),fPhase_dicho_FCR_TT=c("1st_ant","taste_test")))
 p2L <- emmip(liking_6c, fPhase_dicho_FCR_TT ~res_logF_AG , at=mylist,CIs=TRUE,
