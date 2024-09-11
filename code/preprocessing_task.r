@@ -22,7 +22,7 @@ lmeresampler, gridExtra,readr, grDevices, gtsummary, misty)
 
 
 # Set whether Original data should be used or synthetic data (openly shared dataset with age and sex synthetic)
-original_data <- FALSE 
+original_data <- TRUE 
 
 
 # Set all themes
