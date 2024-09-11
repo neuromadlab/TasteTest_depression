@@ -26,7 +26,7 @@ lmeresampler, gridExtra,readr, grDevices, gtsummary, car)
 
 
 # Set whether Original data should be used or synthetic data (openly shared dataset with age and sex synthetic)
-original_data <- FALSE 
+original_data <- TRUE 
 
 
 # Set all themes
@@ -85,6 +85,7 @@ if (original_data == TRUE){
 } else {
   base::load("./input/TUE008_Data_TT_sharable.RData")
 }
+
 
 ###############################################################################################
 # (3). VISUALIZE CHANGES OVER TIME 
@@ -320,6 +321,12 @@ liking_2c <- lmer(RatingValue ~ fMDD * fPhase_dicho_FCR_TT +  fSnack + cBMI + cA
 summary(liking_2c) 
 confint(liking_2c, method="Wald")
 
+
+dliking_joint$gm_SHAPS <- misty::center(dliking_joint$SHAPS_sum, type = c("CWC"), cluster = dliking_joint$fMDD, value = NULL, name = ".c", as.na = NULL, check = TRUE)
+
+liking_2c_SHAPS <- lmer(RatingValue ~ fMDD * fPhase_dicho_FCR_TT + gm_SHAPS*fPhase_dicho_FCR_TT  +  fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dliking_joint)
+summary(liking_2c_SHAPS)
+
 # Test boostrapped to make sure results are not dependent on normality assumption 
 # lmeresampler package 
 
@@ -351,9 +358,16 @@ summary(liking_2b)
 ## Same for Wanting  
 contrasts(dwanting_joint$fPhase_dicho_FCR_TT) <-  contr.treatment(levels(dwanting_joint$fPhase_dicho_FCR_TT), base = 1) # Change here if you want to get effects for other phase 
 contrasts(dwanting_joint$fMDD) <-  contr.treatment(levels(dwanting_joint$fMDD), base = 1) # Change here if you want to get effects for other group
+write.csv(dwanting_joint, paste("./input_original/dwanting.xlsx"), row.names=FALSE)
+write.csv(dliking_joint, paste("./input_original/dliking.xlsx"), row.names=FALSE)
 
 wanting_2c <- lmer(RatingValue ~ fMDD * fPhase_dicho_FCR_TT +  fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_joint)
 summary(wanting_2c)
+
+dwanting_joint$gm_SHAPS <- misty::center(dwanting_joint$SHAPS_sum, type = c("CWC"), cluster = dwanting_joint$fMDD, value = NULL, name = ".c", as.na = NULL, check = TRUE)
+
+wanting_2c_SHAPS <- lmer(RatingValue ~ fMDD * fPhase_dicho_FCR_TT + gm_SHAPS*fPhase_dicho_FCR_TT  +  fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_joint)
+summary(wanting_2c_SHAPS)
 
 #Formel Test of Model Fit 
 AIC <- AIC(wanting_2a, wanting_2b, wanting_2c)
@@ -427,23 +441,29 @@ wanting_2e <- lmer(RatingValue ~ AtypicalGroup * fPhase_dicho_FCR_TT +  fSnack +
 summary(wanting_2e)
 confint(wanting_2e, method="Wald")
 
-wanting_2f <- lmer(RatingValue ~ cAtypicalBalance_acute * fPhase_dicho_FCR_TT + cBDI_sum  + fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_joint)
-summary(wanting_2f)
+# Benjamini Hochberg Correction for Atypical Exploratory Analysis 
+p_values_Main_effect = c(0.046, 0.004, 0.70) # P-Values for MDD, Atypical, Melancholic MDD for Main Effect 
+p_values_Main_effect_vs_Atypical = c(0.046, 0.031, 0.70) # P-Values for MDD, Atypical, Melancholic MDD for Main Effect (when Atypical dummy coded 0)
+p_values_Main_effect_during_consummation = c(0.53,0.027,0.27) # P-Values for MDD, Atypical, Melancholic MDD for Main Effect (when Atypical dummy coded 0)
+p.adjust(p_values_Main_effect_during_consummation, method = "BH", n = length(p_values_Main_effect_during_consummation))
+p_values_Interaction_effect = c(0.004, 0.008, 0.044) # P-Values for MDD, Atypical, Melancholic MDD for Interaction Effect 
+p.adjust(p_values_Interaction_effect, method = "BH", n = length(p_values_Interaction_effect))
 
 # Super interesting, for liking nothing at all still! 
 contrasts(dliking_joint$fPhase_dicho_FCR_TT) <-  contr.treatment(levels(dliking_joint$fPhase_dicho_FCR_TT), base = 1)
 dliking_joint$AtypicalGroup <- factor(dliking_joint$AtypicalGroup, levels = c("HCP","low atypical MDD", "high atypical MDD"))
-contrasts(dliking_joint$AtypicalGroup) <-  contr.treatment(levels(dliking_joint$AtypicalGroup), base = 3)
+contrasts(dliking_joint$AtypicalGroup) <-  contr.treatment(levels(dliking_joint$AtypicalGroup), base = 1)
 
 liking_2e <- lmer(RatingValue ~ AtypicalGroup * fPhase_dicho_FCR_TT +  fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dliking_joint)
 summary(liking_2e)
 confint(liking_2e, method="Wald")
 
-p_AT = c(0.62,0.55,0.34) # liking 
-p.adjust(p_AT, method = "BH", n = length(p_AT))
+# Benjamini Hochberg Correction for Atypical Exploratory Analysis 
+p_values_Main_effect = c(0.95,0.62,0.55) # P-Values for MDD, Atypical, Melancholic MDD for Main Effect 
+p.adjust(p_values_Main_effect, method = "BH", n = length(p_values_Main_effect))
+p_values_Interaction_effect = c(0.26,0.45,0.27) # P-Values for MDD, Atypical, Melancholic MDD for Interaction Effect 
+p.adjust(p_values_Interaction_effect, method = "BH", n = length(p_values_Interaction_effect))
 
-liking_2f<- lmer(RatingValue ~ cAtypicalBalance_acute  * fPhase_dicho_FCR_TT + fMDD* fPhase_dicho_FCR_TT + fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dliking_joint)
-summary(liking_2f)
 
 ## Save Main Results ## 
 # Create Html Output to Word Document with Results 
@@ -658,6 +678,136 @@ summary(wanting_2e_Int2)
 liking_2e_Int <- lmer(RatingValue ~ AtypicalGroup * fPhase_dicho_FCR_TT + AtypicalGroup* cIntensity + fSnack.x + cBMI.x + cAge.x + cSex.x + (1+ fSnack.x + fPhase_dicho_FCR_TT|ID), dLiking_Other)
 summary(liking_2e_Int)
 
+###################################################
+# Permutation Testing 
+###################################################
+wanting_2c <- lmer(RatingValue ~ fMDD * fPhase_dicho_FCR_TT +  fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_joint)
+summary(wanting_2c)
+
+liking_2c <- lmer(RatingValue ~ fMDD * fPhase_dicho_FCR_TT +  fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dliking_joint)
+summary(liking_2c) 
+
+p_original     = matrix(data=NA, nrow=1, ncol=4)
+t_original     = matrix(data=NA, nrow=1, ncol=4)
+
+p_original[1,1] <- coef(summary(wanting_2c))[,"Pr(>|t|)"]["fMDDMDD"] 
+p_original[1,2] <- coef(summary(wanting_2c))[,"Pr(>|t|)"]["fMDDMDD:fPhase_dicho_FCR_TTtaste_test"]
+p_original[1,3] <- coef(summary(liking_2c))[,"Pr(>|t|)"]["fMDDMDD"] 
+p_original[1,4] <- coef(summary(liking_2c))[,"Pr(>|t|)"]["fMDDMDD:fPhase_dicho_FCR_TTtaste_test"]
+
+t_original[1,1] <- coef(summary(wanting_2c))[,"t value"]["fMDDMDD"] 
+t_original[1,2] <- coef(summary(wanting_2c))[,"t value"]["fMDDMDD:fPhase_dicho_FCR_TTtaste_test"]
+t_original[1,3] <- coef(summary(liking_2c))[,"t value"]["fMDDMDD"] 
+t_original[1,4] <- coef(summary(liking_2c))[,"t value"]["fMDDMDD:fPhase_dicho_FCR_TTtaste_test"]
+
+
+nperm = 1000 
+p_values     = matrix(data=NA, nrow=nperm, ncol=4)
+t_values     = matrix(data=NA, nrow=nperm, ncol=4)
+
+for (perm in 1:nperm){
+    print(perm)
+    # Shuffle MDD Labels
+    dwanting_perm <- dwanting_joint  %>% ungroup() %>%
+    nest_by(fID, fMDD)  %>%
+    transform(fMDD = sample(fMDD)) %>%
+    tidyr::unnest(cols = c(data))
+
+    # for liking use the SAME(!) permuted lables! 
+    dliking_perm <- dwanting_perm  %>% ungroup() %>%
+                      nest_by(fID, fMDD) %>% select(fID, fMDD)   
+    dliking_perm <-  merge(dliking_joint, dliking_perm, by = "fID", all = FALSE ) # Important now the shuffled labels are MDD.y (!) 
+
+    # Rerun LMERS 
+    wanting_perm <- lmer(RatingValue ~ fMDD * fPhase_dicho_FCR_TT +  fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_perm)
+    liking_perm <- lmer(RatingValue ~ fMDD.y * fPhase_dicho_FCR_TT +  fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dliking_perm)
+
+    # Extract relevant statistics 
+    p_values[perm,1] <- coef(summary(wanting_perm))[,"Pr(>|t|)"]["fMDDMDD"] 
+    p_values[perm,2] <-coef(summary(wanting_perm))[,"Pr(>|t|)"]["fMDDMDD:fPhase_dicho_FCR_TTtaste_test"]
+    p_values[perm,3] <-coef(summary(liking_perm))[,"Pr(>|t|)"]["fMDD.yMDD"] 
+    p_values[perm,4] <- coef(summary(liking_perm))[,"Pr(>|t|)"]["fMDD.yMDD:fPhase_dicho_FCR_TTtaste_test"] 
+
+    # Extract relevant statistics 
+    t_values[perm,1] <- coef(summary(wanting_perm))[,"t value"]["fMDDMDD"] 
+    t_values[perm,2] <-coef(summary(wanting_perm))[,"t value"]["fMDDMDD:fPhase_dicho_FCR_TTtaste_test"]
+    t_values[perm,3] <-coef(summary(liking_perm))[,"t value"]["fMDD.yMDD"] 
+    t_values[perm,4] <- coef(summary(liking_perm))[,"t value"]["fMDD.yMDD:fPhase_dicho_FCR_TTtaste_test"] 
+
+    } 
+
+# Save Permutations 
+write.csv(p_values, paste("./output/permutations_pvalue.csv"), row.names=FALSE)
+write.csv(t_values, paste("./output/permutations_tvalue.csv"), row.names=FALSE)
+
+p_values <- read.csv('./output/permutations_pvalue.csv')
+t_values <- read.csv('./output/permutations_tvalue.csv')
+# Determine how mnay are more extreme than original 
+
+# "Classical permuted p values"
+(sum(t_values[,1] <= (t_original[1,1])) + sum(t_values[,1] >= (-1*t_original[1,1])))/1000 # Two sided hypotheses 
+(sum(t_values[,3] <= (-1*t_original[1,3])) + sum(t_values[,3] >= (t_original[1,3])))/1000 # Two sided hypotheses 
+
+(sum(t_values[,2] <= (-1*t_original[1,2])) + sum(t_values[,2] >= (t_original[1,2])))/1000 # Two sided hypotheses 
+(sum(t_values[,4] <= (-1*t_original[1,4])) + sum(t_values[,4] >= (t_original[1,4])))/1000 # Two sided hypotheses 
+
+
+# Joint FALSE DISCOVERY RATE 
+sum(p_values[,1] < 0.05 | p_values[,3] < 0.05)/1000 
+sum(p_values[,2] < 0.05 | p_values[,4] < 0.05)/1000 
+
+df_p_values <- as.data.frame(p_values)
+df_t_values <- as.data.frame(t_values)
+
+# Select always the smaller t-value: 
+df_t_values_min <- transform(df_t_values, min = pmax(abs(V1), abs(V3)))
+(sum((df_t_values_min[,5] <= (t_original[1,1]))) + sum(df_t_values_min[,5] >= (-1*t_original[1,1])))/1000
+(sum((df_t_values_min[,5] <= (-1*t_original[1,3]))) + sum(df_t_values_min[,5] >= (t_original[1,3])))/1000
+
+df_t_values_min <- transform(df_t_values, min_int = pmax(abs(V2), abs(V4)))
+(sum((df_t_values_min[,5] <= (-1*t_original[1,2]))) + sum(df_t_values_min[,5] >= (t_original[1,2])))/1000
+(sum((df_t_values_min[,5] <= (-1*t_original[1,4]))) + sum(df_t_values_min[,5] >= (t_original[1,4])))/1000
+
+# Visualize Permutations
+hist(p_values[,c(1,3)]) 
+
+df_p_values <- df_p_values %>% mutate(id = row_number()) %>%
+   tidyr::pivot_longer(c("V1":"V4"), names_to = "Model", values_to = "p_values")
+df_t_values <- df_t_values  %>% mutate(id = row_number()) %>%
+   tidyr::pivot_longer(c("V1":"V4"), names_to = "Model", values_to = "t_values")
+
+Perm_tests <- ggplot(df_p_values, aes(x=p_values)) + 
+ geom_histogram( color="#e9ecef", alpha=0.6, position = 'identity') +
+  theme(legend.position = "right",text = element_text(face = 'bold',size = 16.0),
+        axis.text = element_text(face = 'plain',size = 12.0),axis.text.x = element_text(size = 12.0)) +
+  geom_vline(data=filter(df_p_values, Model=="V1"), aes(xintercept= p_original[1,1]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_p_values, Model=="V2"), aes(xintercept= p_original[1,2]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_p_values, Model=="V3"), aes(xintercept= p_original[1,3]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_p_values, Model=="V4"), aes(xintercept= p_original[1,4]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(aes(xintercept= 0.05, color = "p = 0.05"), linewidth = 2, linetype = "dashed")+   
+  facet_wrap(~Model)              
+  xlab(label = 'Permuted p-values')
+ggsave(paste(path_out, "Perm_p_values.png", sep=""), 
+        plot = Perm_tests,  height = 6, width = 7, units = "in", dpi = 600, bg = "white")
+
+Perm_tests_tvalue <- ggplot(df_t_values, aes(x=t_values)) + 
+ geom_histogram( color="#e9ecef", alpha=0.6, position = 'identity') +
+  theme(legend.position = "right",text = element_text(face = 'bold',size = 16.0),
+        axis.text = element_text(face = 'plain',size = 12.0),axis.text.x = element_text(size = 12.0)) +
+  geom_vline(data=filter(df_t_values, Model=="V1"), aes(xintercept= t_original[1,1]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_t_values, Model=="V2"), aes(xintercept= t_original[1,2]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_t_values, Model=="V3"), aes(xintercept= t_original[1,3]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_t_values, Model=="V4"), aes(xintercept= t_original[1,4]), linewidth = 2, linetype = "dashed") + 
+  facet_wrap(~Model)              
+  xlab(label = 'Permuted t-values')
+
+ggsave(paste(path_out, "Perm_t_values.png", sep=""), 
+        plot = Perm_tests_tvalue,  height = 6, width = 7, units = "in", dpi = 600, bg = "white")
+
+gg.Gline <- ggplot(df_p_values, aes(x= Model, y = p_values)) + 
+ geom_line(aes(color = Model, group = id)) + geom_point()
+
+
 #############################################################################################
 ## (5). Hypothesis II: Anhedonia ####
 #############################################################################################
@@ -744,6 +894,7 @@ print(confint(wanting_3c_lmer_par_boot), n = 30)
 
 # SENSITIVITY ANALYSES
 
+
 wanting_3c_sex <- lmer(RatingValue ~ cSHAPS_sum * fPhase_dicho_FCR_TT*cSex + fSnack + cBMI + cAge +cSex  + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_joint)
 summary(wanting_3c_sex)
 
@@ -774,6 +925,124 @@ sjPlot:: tab_model(liking_3c, wanting_3c,
                     show.se =TRUE,
                     dv.labels = c("Liking anhedonia", "Wanting anhedonia"), 
                     file= paste(path_out, sub_groups, "/","SI_LW_anhedonia_ModelResults", ".doc", sep = ""))
+
+
+
+###################################################
+# Permutation Testing ANHEDONIA 
+###################################################
+wanting_3c <- lmerTest::lmer(RatingValue ~ cSHAPS_sum * fPhase_dicho_FCR_TT + fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_joint)
+summary(wanting_3c)
+
+liking_3c <- lmer(RatingValue ~ cSHAPS_sum * fPhase_dicho_FCR_TT + fSnack + cBMI + cAge + cSex + (1 + fSnack + fPhase_dicho_FCR_TT|ID), dliking_joint)
+summary(liking_3c)
+
+p_original_SHAPS     = matrix(data=NA, nrow=1, ncol=4)
+t_original_SHAPS     = matrix(data=NA, nrow=1, ncol=4)
+
+p_original_SHAPS[1,1] <- coef(summary(wanting_3c))[,"Pr(>|t|)"]["cSHAPS_sum"] 
+p_original_SHAPS[1,2] <- coef(summary(wanting_3c))[,"Pr(>|t|)"]["cSHAPS_sum:fPhase_dicho_FCR_TTtaste_test"]
+p_original_SHAPS[1,3] <- coef(summary(liking_3c))[,"Pr(>|t|)"]["cSHAPS_sum"] 
+p_original_SHAPS[1,4] <- coef(summary(liking_3c))[,"Pr(>|t|)"]["cSHAPS_sum:fPhase_dicho_FCR_TTtaste_test"]
+
+t_original_SHAPS[1,1] <- coef(summary(wanting_3c))[,"t value"]["cSHAPS_sum"] 
+t_original_SHAPS[1,2] <- coef(summary(wanting_3c))[,"t value"]["cSHAPS_sum:fPhase_dicho_FCR_TTtaste_test"]
+t_original_SHAPS[1,3] <- coef(summary(liking_3c))[,"t value"]["cSHAPS_sum"] 
+t_original_SHAPS[1,4] <- coef(summary(liking_3c))[,"t value"]["cSHAPS_sum:fPhase_dicho_FCR_TTtaste_test"]
+
+
+nperm = 1000 
+p_values_SHAPS     = matrix(data=NA, nrow=nperm, ncol=4)
+t_values_SHAPS     = matrix(data=NA, nrow=nperm, ncol=4)
+
+for (perm in 1:nperm){
+    print(perm)
+    # Shuffle MDD Labels
+    dwanting_perm <- dwanting_joint  %>% ungroup() %>%
+    nest_by(fID, cSHAPS_sum)  %>%
+    transform(cSHAPS_sum = sample(cSHAPS_sum)) %>%
+    tidyr::unnest(cols = c(data))
+
+    # for liking use the SAME(!) permuted lables! 
+    dliking_perm <- dwanting_perm  %>% ungroup() %>%
+                      nest_by(fID, cSHAPS_sum) %>% select(fID, cSHAPS_sum)   
+    dliking_perm <-  merge(dliking_joint, dliking_perm, by = "fID", all = FALSE ) # Important now the shuffled labels are MDD.y (!) 
+
+    # Rerun LMERS 
+    wanting_perm <- lmer(RatingValue ~ cSHAPS_sum * fPhase_dicho_FCR_TT +  fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dwanting_perm)
+    liking_perm <- lmer(RatingValue ~ cSHAPS_sum.y * fPhase_dicho_FCR_TT +  fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dliking_perm)
+
+    # Extract relevant statistics 
+    p_values_SHAPS[perm,1] <- coef(summary(wanting_perm))[,"Pr(>|t|)"]["cSHAPS_sum"] 
+    p_values_SHAPS[perm,2] <-coef(summary(wanting_perm))[,"Pr(>|t|)"]["cSHAPS_sum:fPhase_dicho_FCR_TTtaste_test"]
+    p_values_SHAPS[perm,3] <-coef(summary(liking_perm))[,"Pr(>|t|)"]["cSHAPS_sum.y"] 
+    p_values_SHAPS[perm,4] <- coef(summary(liking_perm))[,"Pr(>|t|)"]["cSHAPS_sum.y:fPhase_dicho_FCR_TTtaste_test"] 
+
+    # Extract relevant statistics 
+    t_values_SHAPS[perm,1] <- coef(summary(wanting_perm))[,"t value"]["cSHAPS_sum"] 
+    t_values_SHAPS[perm,2] <-coef(summary(wanting_perm))[,"t value"]["cSHAPS_sum:fPhase_dicho_FCR_TTtaste_test"]
+    t_values_SHAPS[perm,3] <-coef(summary(liking_perm))[,"t value"]["cSHAPS_sum.y"] 
+    t_values_SHAPS[perm,4] <- coef(summary(liking_perm))[,"t value"]["cSHAPS_sum.y:fPhase_dicho_FCR_TTtaste_test"] 
+
+    } 
+
+# Save Permutations 
+write.csv(p_values_SHAPS, paste("./output/permutations_pvalue_SHAPS.csv"), row.names=FALSE)
+write.csv(t_values_SHAPS, paste("./output/permutations_tvalue_SHAPS.csv"), row.names=FALSE)
+
+# Determine how mnay are more extreme than original 
+
+# "Classical permuted p values"
+sum(t_values_SHAPS[,1] <= t_original_SHAPS[1,1])/1000
+sum(t_values_SHAPS[,2] >= t_original_SHAPS[1,2])/1000
+sum(t_values_SHAPS[,3] <= t_original_SHAPS[1,3])/1000
+sum(t_values_SHAPS[,4] >= t_original_SHAPS[1,4])/1000
+
+# Jpint permutation value 
+sum((p_values_SHAPS[,1] <= 0.05 | p_values_SHAPS[,3] <= 0.05))/1000
+sum(p_values_SHAPS[,2] <= 0.05 | p_values_SHAPS[,4] <= 0.05)/1000
+
+sum((t_values_SHAPS[,1] <= t_original_SHAPS[1,1] | t_values_SHAPS[,3]  <= t_original_SHAPS[1,3]))/1000
+sum((t_values_SHAPS[,2] >=  t_original_SHAPS[1,2] | t_values_SHAPS[,4] >= t_original_SHAPS[1,4]))/1000
+
+
+df_p_values_SHAPS <- as.data.frame(p_values_SHAPS)
+df_t_values_SHAPS <- as.data.frame(t_values_SHAPS)
+
+# Visualize Permutations
+
+df_p_values_SHAPS <- df_p_values_SHAPS %>% mutate(id = row_number()) %>%
+   tidyr::pivot_longer(c("V1":"V4"), names_to = "Model", values_to = "p_values")
+df_t_values_SHAPS <- df_t_values_SHAPS  %>% mutate(id = row_number()) %>%
+   tidyr::pivot_longer(c("V1":"V4"), names_to = "Model", values_to = "t_values")
+
+Perm_tests <- ggplot(df_p_values_SHAPS, aes(x=p_values)) + 
+ geom_histogram( color="#e9ecef", alpha=0.6, position = 'identity') +
+  theme(legend.position = "right",text = element_text(face = 'bold',size = 16.0),
+        axis.text = element_text(face = 'plain',size = 12.0),axis.text.x = element_text(size = 12.0)) +
+  geom_vline(data=filter(df_p_values_SHAPS, Model=="V1"), aes(xintercept= p_original_SHAPS[1,1]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_p_values_SHAPS, Model=="V2"), aes(xintercept= p_original_SHAPS[1,2]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_p_values_SHAPS, Model=="V3"), aes(xintercept= p_original_SHAPS[1,3]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_p_values_SHAPS, Model=="V4"), aes(xintercept= p_original_SHAPS[1,4]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(aes(xintercept= 0.05, color = "p = 0.05"), linewidth = 2, linetype = "dashed")+   
+  facet_wrap(~Model)              
+  xlab(label = 'Permuted p-values (SHAPS)')
+ggsave(paste(path_out, "Perm_p_values_SHAPS.png", sep=""), 
+        plot = Perm_tests,  height = 6, width = 7, units = "in", dpi = 600, bg = "white")
+
+Perm_tests_tvalue <- ggplot(df_t_values_SHAPS, aes(x=t_values)) + 
+ geom_histogram( color="#e9ecef", alpha=0.6, position = 'identity') +
+  theme(legend.position = "right",text = element_text(face = 'bold',size = 16.0),
+        axis.text = element_text(face = 'plain',size = 12.0),axis.text.x = element_text(size = 12.0)) +
+  geom_vline(data=filter(df_t_values_SHAPS, Model=="V1"), aes(xintercept= t_original_SHAPS[1,1]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_t_values_SHAPS, Model=="V2"), aes(xintercept= t_original_SHAPS[1,2]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_t_values_SHAPS, Model=="V3"), aes(xintercept= t_original_SHAPS[1,3]), linewidth = 2, linetype = "dashed") + 
+  geom_vline(data=filter(df_t_values_SHAPS, Model=="V4"), aes(xintercept= t_original_SHAPS[1,4]), linewidth = 2, linetype = "dashed") + 
+  facet_wrap(~Model)              
+  xlab(label = 'Permuted t-values (SHAPS)')
+
+ggsave(paste(path_out, "Perm_t_values_SHAPS.png", sep=""), 
+        plot = Perm_tests_tvalue,  height = 6, width = 7, units = "in", dpi = 600, bg = "white")
 
 #########################################################################################
 # PREPARE FOR BAYESIAN ANALYSES 
@@ -2193,28 +2462,70 @@ ggsave(paste(path_out, sub_anhedonia, "Fig2_Revision.png", sep=""),
 ## MULTIVARIATE TESTING 
 ################################################
 
+# For ghrelin remove NA values 
+dwanting_joint_ghr <- dwanting_joint[complete.cases(dwanting_joint[,c("res_logF_AG")]),]
+length(unique(dwanting_joint_ghr$fID))
+
+dliking_joint_ghr <- dliking_joint[complete.cases(dliking_joint[,c("res_logF_AG")]),]
+length(unique(dliking_joint_ghr$fID))
+
+dwanting_joint_ghr$cBDI_sum <- dwanting_joint_ghr$BDI_sum - mean(dwanting_joint_ghr$BDI_sum) 
+dwanting_joint_ghr$cBDI_sum <- dwanting_joint_ghr$BDI_sum - mean(dwanting_joint_ghr$BDI_sum) 
+
 # https://library.virginia.edu/data/articles/getting-started-with-multivariate-multiple-regression#:~:text=Multivariate%20Multiple%20Regression%20is%20a,parent%20income%2C%20and%20so%20forth.
 
 # For MV Testing simplify model, average for phases, and snacks 
 dwanting_agg2 <- aggregate(dwanting_joint_ghr,
-                by = list(dwanting_joint_ghr$fID),
+                by = list(dwanting_joint_ghr$fID, dwanting_joint_ghr$fPhase_dicho_FCR_TT),
                 FUN = mean)
+head(dwanting_agg2)
 
 dliking_agg2 <- aggregate(dliking_joint_ghr,
-                by = list(dliking_joint_ghr$fID),
+                by = list(dliking_joint_ghr$fID, dliking_joint_ghr$fPhase_dicho_FCR_TT),
                 FUN = mean)
 
 # Merge Liking and Wanting Aggregate Dataframes 
-d_WL_MV_agg2 <- merge(dwanting_agg2, dliking_agg2, by = "ID")
+d_WL_MV_agg2 <- merge(dwanting_agg2, dliking_agg2, by = c("ID","Group.1", "Group.2"))
 head(d_WL_MV_agg2)
+
 #  From aggregation re-introduce MDD
 d_WL_MV_agg2$fMDD <- factor(d_WL_MV_agg2$Group_MDD.x, levels = c(0,1), labels = c("HCP", "MDD"))
-
 # Multivariate Model
-WL_MV_AG_v2 <- lm(cbind(RatingValue.x, RatingValue.y) ~ res_logF_AG.x  +   fMDD  + cBMI.x + cAge.x + cSex.x, data = d_WL_MV_agg2)
 # Test statistic for Multivariate regression, Pillai test 
+contrasts(d_WL_MV_agg2$Group.2)  <- contr.treatment(levels(d_WL_MV_agg2$Group.2), base = 1)
+
+WL_MV_AG_v2 <- lm(cbind(RatingValue.x, RatingValue.y) ~ res_logF_AG.x  + Group.2 * fMDD + cBMI.x + cAge.x + cSex.x, data = d_WL_MV_agg2)
 Anova(WL_MV_AG_v2)
 summary(WL_MV_AG_v2)
+
+WL_MV_HIR_v2 <- lm(cbind(RatingValue.x, RatingValue.y) ~ res_logHOMA.x + Group.2* fMDD + cBMI.x + cAge.x + cSex.x, data = d_WL_MV_agg2)
+Anova(WL_MV_HIR_v2)
+summary(WL_MV_HIR_v2)
+
+library(xtable)
+print(xtable(anova(WL_MV_AG_v2)), type="html")
+print(xtable(anova(WL_MV_HIR_v2)), type="html")
+
+# plot Multivariate 
+d_WL_MV_agg_long <- d_WL_MV_agg2 %>% 
+   tidyr::pivot_longer(c("RatingValue.x", "RatingValue.y"), names_to = "RatingType", values_to = "Rating")
+
+Plot_mUltivaritae_ghrelin <- ggplot(d_WL_MV_agg_long, 
+       aes(x=res_logF_AG.x, y = Rating, color=Group.2)) +
+     theme(legend.position = "bottom",text = element_text(face = 'bold',size = 18.0),
+        axis.text = element_text(face = 'plain',size = 16.0),axis.text.x = element_text(size = 16.0))+
+   scale_color_manual(guide = guide_legend(title="Phase"),values = c(color_ant1, color_cons)) + 
+  geom_point(size = 3, 
+             alpha=.8) + 
+  geom_smooth(method="rlm", 
+              se=TRUE) +
+  facet_wrap(~factor(RatingType, 
+                     labels = c("Wanting", "Liking")), scales = "free", 
+             ncol = 1) +  xlab(label = 'Acyl ghrelin (res log)') +
+  ylab(label = 'Rating Value') 
+ggsave(paste(path_out, sub_metparam, "MultivariatePlot_Ghrelin.png", sep=""), 
+        plot = Plot_mUltivaritae_ghrelin,  height = 7, width = 5, units = "in", dpi = 600, bg = "white")
+
 
 # Test Coupling of wanting and liking 
 d_WL_MV_agg2$cRatingLiking <- d_WL_MV_agg2$RatingValue.y - mean(d_WL_MV_agg2$RatingValue.y)
@@ -2224,7 +2535,6 @@ fit =lm(RatingValue.x~cRatingLiking*res_logF_AG.x ,data=d_WL_MV_agg2)
 fit_check=lm(RatingValue.x~cRatingLiking*res_logF_AG.x +cBMI.x + fMDD + cSex.x + cAge.x   ,data=d_WL_MV_agg2)
 summary(fit_check)
 confint(fit_check, method = "Wald")
-p.adjust(c(0.006, 0.022, 0.08, 0.047, 0.047, 0.051), method = "BH", n = 6)
 
 # LINEAR MIXED EFFECTS MODELS 
 # HOMA And taste_test 
@@ -2237,16 +2547,6 @@ summary(wanting_6b)
 contrasts(dliking_joint$fPhase_dicho_FCR_TT)  <- contr.treatment(levels(dliking_joint$fPhase_dicho_FCR_TT), base = 1)
 liking_6b <- lmer(RatingValue ~  fPhase_dicho_FCR_TT * res_logHOMA + fSnack + cBMI + cAge + cSex + (1+ fSnack + fPhase_dicho_FCR_TT|ID), dliking_joint)
 summary(liking_6b)
-
-# For ghrelin remove NA values 
-dwanting_joint_ghr <- dwanting_joint[complete.cases(dwanting_joint[,c("res_logF_AG")]),]
-length(unique(dwanting_joint_ghr$fID))
-
-dliking_joint_ghr <- dliking_joint[complete.cases(dliking_joint[,c("res_logF_AG")]),]
-length(unique(dliking_joint_ghr$fID))
-
-dwanting_joint_ghr$cBDI_sum <- dwanting_joint_ghr$BDI_sum - mean(dwanting_joint_ghr$BDI_sum) 
-dwanting_joint_ghr$cBDI_sum <- dwanting_joint_ghr$BDI_sum - mean(dwanting_joint_ghr$BDI_sum) 
 
 # Ghrelin and Wanting Models 
 
