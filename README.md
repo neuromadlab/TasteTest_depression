@@ -113,5 +113,7 @@ Creates file: TUE008_ghrelin_summary_preprocessed.csv
 Plots metabolic paramters and questionnaire scores (SHAPS, BDI,..) 
 * ![preprocessing_task.r](/input/preprocessing_task.r) Script that prepared dataframe from behavioral data 
 
+## Supplementary Information and Results 
+* Corresponding .docx are provided with more detailed information (e.g. full model output reported in the manuscript) 
 
 
